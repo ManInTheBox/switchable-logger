@@ -1,0 +1,5 @@
+composer.lock
+log
+.phpunit.result.cache
+dump.rdb
+vendor/
