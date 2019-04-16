@@ -2,25 +2,60 @@
 
 include __DIR__.'/vendor/autoload.php';
 
+use App\Infrastructure\Logging\NightShiftLoggingState;
 use App\Infrastructure\Logging\RandomSelectionLoggingState;
 use App\Infrastructure\Logging\RedisControlledLoggingState;
 use App\Infrastructure\Logging\SwitchableLogger;
-use App\Infrastructure\Logging\TimeBasedLoggingState;
-use Monolog\Handler\StreamHandler;
-use Monolog\Logger;
+use Psr\Log\AbstractLogger;
 
-$log = __DIR__.'/log';
-$logger = new Logger('learning', [new StreamHandler($log)]);
+$logger = new class extends AbstractLogger {
+    public $logs = [];
+
+    public function log($level, $message, array $context = [])
+    {
+        $this->logs[] = ['level' => $level, 'message' => $message, 'context' => $context];
+    }
+};
+
 $redis = new Redis();
 $redis->connect('127.0.0.1');
 $state = new RedisControlledLoggingState($redis);
-
-(new SwitchableLogger($logger, $state))->debug('Redis works!');
+(new SwitchableLogger($logger, $state))->warning('Redis works!');
 
 $state = new RandomSelectionLoggingState();
-(new SwitchableLogger($logger, $state))->debug('Random works!');
+(new SwitchableLogger($logger, $state))->info('Random works!');
 
-$state = new TimeBasedLoggingState();
-(new SwitchableLogger($logger, $state))->debug('Time works!');
+$state = new NightShiftLoggingState();
+(new SwitchableLogger($logger, $state))->debug('Night shift works!');
 
-echo file_get_contents($log);
+var_dump($logger->logs);
+
+/*
+$ redis-server &
+$ redis-cli
+127.0.0.1:6379> set logging.enabled 1
+OK
+$ php index.php                                                                                                                                               [22:55:54]
+array(2) {
+  [0] =>
+  array(3) {
+    'level' =>
+    string(7) "warning"
+    'message' =>
+    string(12) "Redis works!"
+    'context' =>
+    array(0) {
+    }
+  }
+  [1] =>
+  array(3) {
+    'level' =>
+    string(5) "debug"
+    'message' =>
+    string(18) "Night shift works!"
+    'context' =>
+    array(0) {
+    }
+  }
+}
+*/

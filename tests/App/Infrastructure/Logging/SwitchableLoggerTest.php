@@ -6,10 +6,12 @@ namespace App\Tests\Infrastructure\Logging;
 
 use App\Infrastructure\Logging\LoggingStateInterface;
 use App\Infrastructure\Logging\SwitchableLogger;
+use App\Infrastructure\Logging\TimeBasedLoggingState;
 use PHPUnit\Framework\TestCase;
+use Psr\Log\AbstractLogger;
 use Psr\Log\LoggerInterface;
 
-class SwitchableLoggerTest extends TestCase
+final class SwitchableLoggerTest extends TestCase
 {
     public function testStateDisabled(): void
     {
